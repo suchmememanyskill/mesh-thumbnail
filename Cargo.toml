@@ -1,0 +1,12 @@
+[package]
+name = "mesh-thumbnail"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.32", features = ["derive"] }
+three-d = { version = "0.18", features= ["headless"] }
+stl_io = { version = "0.8" }
+three-d-asset = {version = "0.9", features= ["jpeg", "png", "obj"] }
+threemf = "0.7.0"
+zip = { version = "2.2"}
