@@ -36,6 +36,8 @@ jobs:
 
       - name: Setup Cache
         uses: Swatinem/rust-cache@v2
+        with:
+          key: "mesh-thumbnail-${{ matrix.target }}"
 
       - name: Build Binary
         run: cargo build --locked --release --target ${{ matrix.target }}
