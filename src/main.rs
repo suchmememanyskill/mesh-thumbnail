@@ -41,6 +41,10 @@ struct Args {
     #[arg(long, default_value = "DDDDDD")]
     color: String,
 
+    /// Overwrite existing output files
+    #[arg(long, default_value_t = false)]
+    overwrite: bool,
+
     /// Input files (at least one required)
     #[arg(required = true)]
     files: Vec<String>,
@@ -107,7 +111,14 @@ fn main() {
 
         let filename_image = format!("{}{}", &filename[..filename.len() - extension.len()] ,args.format.to_string());
         let image_path = PathBuf::from(args.outdir.clone()).join(filename_image);
-    
+        let image_path_str = image_path.to_str().take().unwrap();
+
+        if !args.overwrite && path::Path::new(image_path_str).exists()
+        {
+            println!("Path {} already exists, skipping {}...", image_path_str, filename);
+            continue;
+        }
+
         let mesh = match parse_mesh::parse_file(absolute_path.to_str().take().unwrap()) 
         {
             Ok(v) => v,
