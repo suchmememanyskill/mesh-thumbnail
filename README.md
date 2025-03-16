@@ -24,6 +24,7 @@ Options:
       --height <HEIGHT>    Image height [default: 512]
       --format <FORMAT>    Output image format [default: png] [possible values: jpg, png]
       --color <COLOR>      Background color in hex format (default: Grey) [default: DDDDDD]
+      --overwrite          Overwrite existing output files
   -h, --help               Print help
   -V, --version            Print version
 ```
