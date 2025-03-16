@@ -10,17 +10,17 @@ use zip::result::ZipError;
 
 pub enum ParseError
 {
-    ReadError,
-    ParseError,
-    MeshConvertError,
+    ReadError(String),
+    ParseError(String),
+    MeshConvertError(String),
 }
 
 impl ToString for ParseError {
     fn to_string(&self) -> String {
         match self {
-            ParseError::ReadError => String::from("Failed to read file"),
-            ParseError::ParseError => String::from("Failed to interpret model"),
-            ParseError::MeshConvertError => String::from("Failed to convert mesh from model"),
+            ParseError::ReadError(str) => String::from(format!("Failed to read file: {}", str)),
+            ParseError::ParseError(str) => String::from(format!("Failed to interpret model: {}", str)),
+            ParseError::MeshConvertError(str) => String::from(format!("Failed to convert mesh from model: {}", str)),
         }
     }
 }
@@ -29,7 +29,7 @@ impl From<io::Error> for ParseError
 {
     fn from(e: io::Error) -> ParseError 
     {
-        ParseError::ReadError
+        ParseError::ReadError(e.to_string())
     }
 }
 
@@ -37,7 +37,7 @@ impl From<threemf::Error> for ParseError
 {
     fn from(e: threemf::Error) -> ParseError
     {
-        ParseError::ParseError
+        ParseError::ParseError(e.to_string())
     }
 }
 
@@ -45,7 +45,7 @@ impl From<ZipError> for ParseError
 {
     fn from(e: ZipError) -> ParseError
     {
-        ParseError::ReadError
+        ParseError::ReadError(e.to_string())
     }
 }
 
@@ -53,7 +53,7 @@ impl From<three_d_asset::Error> for ParseError
 {
     fn from(e: three_d_asset::Error) -> ParseError
     {
-        ParseError::MeshConvertError
+        ParseError::MeshConvertError(e.to_string())
     }
 }
 
@@ -147,7 +147,7 @@ fn parse_stl_zip(path : &str) -> Result<CpuMesh, ParseError>
         }
     }
     
-    return Err(ParseError::MeshConvertError);
+    return Err(ParseError::MeshConvertError(String::from("Failed to find .stl model in zip")));
 }
 
 fn parse_stl_inner(stl : &IndexedMesh) -> Result<CpuMesh, ParseError>
