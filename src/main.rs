@@ -97,12 +97,26 @@ fn main() {
     for file in args.files
     {
         let absolute_path = path::absolute(file).unwrap();
-        let extension = absolute_path.extension().take().unwrap().to_str().take().unwrap();
+        let mut extension = absolute_path.extension().take().unwrap().to_str().take().unwrap();
         let filename = absolute_path.file_name().take().unwrap().to_str().take().unwrap();
+
+        if filename.ends_with(".stl.zip")
+        {
+            extension = ".stl.zip";
+        }
+
         let filename_image = format!("{}{}", &filename[..filename.len() - extension.len()] ,args.format.to_string());
         let image_path = PathBuf::from(args.outdir.clone()).join(filename_image);
     
-        let mesh = parse_mesh::parse_file(absolute_path.to_str().take().unwrap());
+        let mesh = match parse_mesh::parse_file(absolute_path.to_str().take().unwrap()) 
+        {
+            Ok(v) => v,
+            Err(e) => {
+                println!("Error while converting {}: {}.", filename, e.to_string());
+                continue;
+            }
+        };
+
         let color = parse_hex_color(&args.color).unwrap();
         let mut model = Gm::new(
             Mesh::new(&context, &mesh),
