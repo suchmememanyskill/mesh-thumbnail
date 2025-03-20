@@ -106,7 +106,7 @@ fn main() {
 
         if filename.ends_with(".stl.zip")
         {
-            extension = ".stl.zip";
+            extension = "stl.zip";
         }
 
         let filename_image = format!("{}{}", &filename[..filename.len() - extension.len()] ,args.format.to_string());
@@ -165,7 +165,7 @@ fn main() {
         // Render the triangle with the per vertex colors defined at construction
         .render(&camera, &model, &[])
         .read_color();
-    
+
         three_d_asset::io::save(
             &CpuTexture {
                 data: TextureData::RgbaU8(pixels),
