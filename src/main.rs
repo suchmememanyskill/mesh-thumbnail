@@ -149,7 +149,7 @@ fn main() {
             vec3(0.0, 0.0, 0.0),
             vec3(0.0, 1.0, 0.0),
             degrees(45.0),
-            0.000001,
+            magnitude * 0.01,
             1000.0,
         );
         let target = camera.target();
