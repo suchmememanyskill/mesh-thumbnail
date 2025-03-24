@@ -90,15 +90,24 @@ fn parse_3mf(path : &str) -> Result<CpuMesh, ParseError>
     let mut positions : Vec<Vec3> = Vec::new();
     let mut indices : Vec<u32> = Vec::new();
     
-    let f = mfmodel
+    let mut all_meshes : Vec<&threemf::Mesh> = mfmodel
         .iter()
         .map(|f| f.resources.object.iter())
         .flat_map(|f| f)
         .filter(|predicate| predicate.mesh.is_some())
         .map(|f| f.mesh.as_ref().unwrap())
-        .next().unwrap();
+        .collect();
 
-    positions.extend(f.vertices
+    all_meshes.sort_by(|a, b| a.triangles.triangle.len().cmp(&b.triangles.triangle.len()).reverse());
+
+    if all_meshes.len() <= 0
+    {
+        return Err(ParseError::MeshConvertError(String::from("No meshes found in 3mf model")));
+    }
+
+    let mesh = all_meshes[0];
+
+    positions.extend(mesh.vertices
         .vertex
             .iter()
             .map(|a| Vec3 {
@@ -108,7 +117,7 @@ fn parse_3mf(path : &str) -> Result<CpuMesh, ParseError>
             }));
 
     indices.extend(
-        f.triangles.triangle
+        mesh.triangles.triangle
         .iter()
         .flat_map(|a| [a.v1 as u32, a.v2 as u32, a.v3 as u32].into_iter()));
 
