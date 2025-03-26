@@ -1222,6 +1222,7 @@ dependencies = [
  "three-d",
  "three-d-asset",
  "threemf",
+ "wavefront_obj",
  "zip",
 ]
 
@@ -1961,7 +1962,6 @@ dependencies = [
  "half",
  "image",
  "thiserror 2.0.12",
- "wavefront_obj",
  "web-sys",
 ]
 

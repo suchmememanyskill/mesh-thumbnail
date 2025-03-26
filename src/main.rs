@@ -100,7 +100,7 @@ fn main() {
 
     for file in args.files
     {
-        let absolute_path = path::absolute(file).unwrap();
+        let absolute_path = path::absolute(&file).unwrap();
         let mut extension = absolute_path.extension().take().unwrap().to_str().take().unwrap();
         let filename = absolute_path.file_name().take().unwrap().to_str().take().unwrap();
 
@@ -138,8 +138,14 @@ fn main() {
                 }),
             );
 
-        let offset = Mat4::from_translation(model.aabb().min() * -1.0) * Mat4::from_translation((model.aabb().min() - model.aabb().max()) / 2f32);
-        model.set_transformation(Mat4::from_angle_x(Deg(270.0)) * offset);
+        let mut offset = Mat4::from_translation(model.aabb().min() * -1.0) * Mat4::from_translation((model.aabb().min() - model.aabb().max()) / 2f32);
+
+        if !(file.ends_with(".obj") || file.ends_with(".obj.zip"))
+        {
+            offset = Mat4::from_angle_x(Deg(270.0)) * offset;
+        }
+
+        model.set_transformation(offset);
 
         let magnitude = (model.aabb().min() - model.aabb().max()).magnitude();
 
