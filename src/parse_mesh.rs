@@ -201,6 +201,7 @@ fn parse_obj_zip(path : &str) -> Result<CpuMesh, ParseError>
     return Err(ParseError::MeshConvertError(String::from("Failed to find .obj model in zip")));
 }
 
+// https://github.com/asny/three-d-asset/blob/main/src/io/stl.rs#L9
 fn parse_stl_inner(stl : &IndexedMesh) -> Result<CpuMesh, ParseError>
 {
     let positions = stl
@@ -228,6 +229,7 @@ fn parse_stl_inner(stl : &IndexedMesh) -> Result<CpuMesh, ParseError>
     )
 }
 
+// https://github.com/asny/three-d-asset/blob/main/src/io/obj.rs#L54
 fn parse_obj_inner(obj : &ObjSet) -> Result<CpuMesh, ParseError>
 {
     let mut all_meshes : Vec<CpuMesh> = obj.objects.iter().map(|object| {

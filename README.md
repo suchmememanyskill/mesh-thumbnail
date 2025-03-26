@@ -5,6 +5,7 @@ Supported formats:
 - stl 
 - obj
 - stl (zipped)
+- obj (zipped)
 
 Supported output types:
 - png
