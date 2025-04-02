@@ -11,4 +11,4 @@ three-d-asset = {version = "0.9", features= ["jpeg", "png"] }
 threemf = "0.7.0"
 zip = { version = "2.2"}
 wavefront_obj = { version = "10" }
-image = "0.25.6"
+image = { version = "0.25.6", features = ["jpeg", "png"]}
