@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
-three-d = { version = "0.18", features= ["headless"] }
+three-d = { git = "https://github.com/suchmememanyskill/three-d", rev = "f6cf2207bc4effce8395546edadaaf0bacff93c0", features = ["headless"] }
 stl_io = { version = "0.8" }
 three-d-asset = {version = "0.9", features= ["jpeg", "png"] }
 threemf = "0.7.0"
