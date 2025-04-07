@@ -2372,7 +2372,7 @@ dependencies = [
 [[package]]
 name = "three-d"
 version = "0.19.0"
-source = "git+https://github.com/suchmememanyskill/three-d?rev=f6cf2207bc4effce8395546edadaaf0bacff93c0#f6cf2207bc4effce8395546edadaaf0bacff93c0"
+source = "git+https://github.com/suchmememanyskill/three-d?rev=e74750282c08e3388a770f3ac325a34aab9cb7a0#e74750282c08e3388a770f3ac325a34aab9cb7a0"
 dependencies = [
  "cgmath",
  "glow",
