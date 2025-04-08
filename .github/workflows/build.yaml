@@ -4,15 +4,6 @@ name: Build
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      job:
-        description: 'Job to run'
-        required: true
-        type: choice
-        options:
-          - build-apple-darwin
-          - all
 
 jobs:
   build-windows-linux:
