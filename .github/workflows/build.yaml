@@ -6,8 +6,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    name: Build
+  build-windows-linux:
+    name: Build Windows, Linux
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -55,5 +55,50 @@ jobs:
         if: matrix.name == 'linux-amd64'
         with:
           name: Linux-binary
+          path: |
+            target/${{ matrix.target }}/release/mesh-thumbnail
+
+  build-apple-darwin:
+    name: Build Apple Darwin
+    runs-on: macos-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.job == 'all' || github.event.inputs.job == 'build-apple-darwin'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-amd64
+            target: x86_64-apple-darwin
+          - name: macos-arm64
+            target: aarch64-apple-darwin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: "${{ matrix.target }}"
+
+      - name: Setup Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "mesh-thumbnail-${{ matrix.target }}"
+
+      - name: Build Binary
+        run: cargo build --locked --release --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.name == 'macos-amd64'
+        with:
+          name: MacOS-amd64-binary
+          path: |
+            target/${{ matrix.target }}/release/mesh-thumbnail
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.name == 'macos-arm64'
+        with:
+          name: MacOS-arm64-binary
           path: |
             target/${{ matrix.target }}/release/mesh-thumbnail
