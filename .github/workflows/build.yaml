@@ -61,7 +61,6 @@ jobs:
   build-apple-darwin:
     name: Build Apple Darwin
     runs-on: macos-latest
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.job == 'all' || github.event.inputs.job == 'build-apple-darwin'
     strategy:
       fail-fast: false
       matrix:
