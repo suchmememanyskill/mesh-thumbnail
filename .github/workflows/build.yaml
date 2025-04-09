@@ -52,7 +52,7 @@ jobs:
 
       - name: Rename Binary for target
         if: matrix.name != 'win-amd64'
-        run: mv target/${{ matrix.target }}/release/mesh-thumbnail* target/${{ matrix.target }}/release/mesh-thumbnail-${{ matrix.target }}
+        run: mv target/${{ matrix.target }}/release/mesh-thumbnail target/${{ matrix.target }}/release/mesh-thumbnail-${{ matrix.target }}
       # Pesky .exe suffix. There's probably a better way to do this.
       - name: Rename Binary for Windows
         if: matrix.name == 'win-amd64'
