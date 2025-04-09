@@ -6,17 +6,25 @@ on:
     branches: [main]
 
 jobs:
-  build-windows-linux:
-    name: Build Windows, Linux
-    runs-on: ubuntu-latest
+  build:
+    name: Build
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: win-amd64
             target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
           - name: linux-amd64
             target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - name: macos-amd64
+            target: x86_64-apple-darwin
+            os: macos-latest
+          - name: macos-arm64
+            target: aarch64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Linux build dependencies
         if: matrix.name == 'linux-amd64'
@@ -42,62 +50,17 @@ jobs:
       - name: Build Binary
         run: cargo build --locked --release --target ${{ matrix.target }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Rename Binary for target
+        if: matrix.name != 'win-amd64'
+        run: mv target/${{ matrix.target }}/release/mesh-thumbnail* target/${{ matrix.target }}/release/mesh-thumbnail-${{ matrix.target }}
+      # Pesky .exe suffix. There's probably a better way to do this.
+      - name: Rename Binary for Windows
         if: matrix.name == 'win-amd64'
-        with:
-          name: Windows-binary
-          path: |
-            target/${{ matrix.target }}/release/mesh-thumbnail.exe
+        run: mv target/${{ matrix.target }}/release/mesh-thumbnail.exe target/${{ matrix.target }}/release/mesh-thumbnail-${{ matrix.target }}.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
-        if: matrix.name == 'linux-amd64'
         with:
-          name: Linux-binary
+          name: ${{matrix.name}}-binary
           path: |
-            target/${{ matrix.target }}/release/mesh-thumbnail
-
-  build-apple-darwin:
-    name: Build Apple Darwin
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: macos-amd64
-            target: x86_64-apple-darwin
-          - name: macos-arm64
-            target: aarch64-apple-darwin
-    steps:
-      - name: Checkout
-        uses: actions/checkout@master
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: "${{ matrix.target }}"
-
-      - name: Setup Cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: "mesh-thumbnail-${{ matrix.target }}"
-
-      - name: Build Binary
-        run: cargo build --locked --release --target ${{ matrix.target }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        if: matrix.name == 'macos-amd64'
-        with:
-          name: MacOS-amd64-binary
-          path: |
-            target/${{ matrix.target }}/release/mesh-thumbnail
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        if: matrix.name == 'macos-arm64'
-        with:
-          name: MacOS-arm64-binary
-          path: |
-            target/${{ matrix.target }}/release/mesh-thumbnail
+            target/${{ matrix.target }}/release/mesh-thumbnail*
