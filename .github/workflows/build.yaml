@@ -63,4 +63,4 @@ jobs:
         with:
           name: ${{matrix.name}}-binary
           path: |
-            target/${{ matrix.target }}/release/mesh-thumbnail*
+            target/${{ matrix.target }}/release/mesh-thumbnail-${{ matrix.target }}*
