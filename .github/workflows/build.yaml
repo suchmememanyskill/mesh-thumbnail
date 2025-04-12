@@ -4,6 +4,15 @@ name: Build
 on:
   push:
     branches: [main]
+  workflow_call:
+    outputs:
+      artifacts:
+        description: 'Path to the built artifacts'
+        value: ${{ jobs.build.outputs.artifacts }}
+
+permissions:
+  contents: read    # Required by actions/checkout@v4 to clone the repository
+  id-token: write   # Required by Swatinem/rust-cache@v2 for OIDC authentication with the cache service
 
 jobs:
   build:
@@ -25,17 +34,11 @@ jobs:
             target: aarch64-apple-darwin
             os: macos-latest
     runs-on: ${{ matrix.os }}
+    outputs:
+      artifacts: ${{ steps.upload.outputs.artifact_path }}
     steps:
-      - name: Linux build dependencies
-        if: matrix.name == 'linux-amd64'
-        run: sudo apt install fontconfig libfontconfig-dev -y
-
-      - name: Windows build dependencies
-        if: matrix.name == 'win-amd64'
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64
-
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -59,6 +62,7 @@ jobs:
         run: mv target/${{ matrix.target }}/release/mesh-thumbnail.exe target/${{ matrix.target }}/release/mesh-thumbnail-${{ matrix.target }}.exe
 
       - name: Upload artifact
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: ${{matrix.name}}-binary
