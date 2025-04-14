@@ -5,10 +5,6 @@ on:
   push:
     branches: [main]
   workflow_call:
-    outputs:
-      artifacts:
-        description: 'Path to the built artifacts'
-        value: ${{ jobs.build.outputs.artifacts }}
 
 permissions:
   contents: read    # Required by actions/checkout@v4 to clone the repository
