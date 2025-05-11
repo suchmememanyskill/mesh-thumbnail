@@ -4,8 +4,10 @@ Supported formats:
 - 3mf
 - stl 
 - obj
+- gcode
 - stl (zipped)
 - obj (zipped)
+- gcode (zipped)
 
 Supported output types:
 - png

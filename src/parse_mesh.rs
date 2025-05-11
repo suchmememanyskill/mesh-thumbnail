@@ -1,13 +1,17 @@
+use regex::Regex;
 use stl_io::IndexedMesh;
 use three_d::*;
 use threemf;
+use std::num::ParseFloatError;
 use std::{collections::HashMap, fs::File};
 use std::io;
 use std::io::Read;
+use std::io::BufRead;
 use stl_io;
 use zip::ZipArchive;
 use zip::result::ZipError;
 use wavefront_obj::obj::{self, ObjSet};
+
 
 pub enum ParseError
 {
@@ -66,6 +70,14 @@ impl From<wavefront_obj::ParseError> for ParseError
     }
 }
 
+impl From<ParseFloatError> for ParseError
+{
+    fn from(e: ParseFloatError) -> ParseError
+    {
+        ParseError::ParseError(e.to_string())
+    }
+}
+
 pub fn parse_file(path : &str) -> Result<CpuMesh, ParseError>
 {
     if path.ends_with(".stl")
@@ -87,6 +99,14 @@ pub fn parse_file(path : &str) -> Result<CpuMesh, ParseError>
     else if path.ends_with(".obj.zip")
     {
         return parse_obj_zip(path);
+    }
+    else if path.ends_with(".gcode")
+    {
+        return parse_gcode(path);
+    }
+    else if path.ends_with(".gcode.zip")
+    {
+        return parse_gcode_zip(path);
     }
 
     return Err(ParseError::ParseError(String::from("Unknown file type")));
@@ -284,4 +304,113 @@ fn parse_obj_inner(obj : &ObjSet) -> Result<CpuMesh, ParseError>
         indices: mesh.indices.clone(),
         ..Default::default()
      });
+}
+
+struct Point 
+{
+    v: Vec3,
+    use_line: bool,
+}
+
+fn parse_gcode(path : &str) -> Result<CpuMesh, ParseError>
+{
+    let mut handle = File::open(path)?;
+
+    parse_gcode_inner(&mut handle)
+}
+
+fn parse_gcode_zip(path : &str) -> Result<CpuMesh, ParseError>
+{
+    let handle = File::open(path)?;
+    let mut zip = ZipArchive::new(handle)?;
+
+    for i in 0..zip.len() {
+        let mut file = zip.by_index(i)?;
+        if file.name().ends_with(".gcode") {
+            let mut buffer = Vec::with_capacity(file.size() as usize);
+            file.read_to_end(&mut buffer)?;
+            let mut cursor = io::Cursor::new(buffer);
+
+            return parse_gcode_inner(&mut cursor);
+        }
+    }
+    
+    return Err(ParseError::MeshConvertError(String::from("Failed to find .stl model in zip")));
+}
+fn parse_gcode_inner<W>(reader: &mut W) -> Result<CpuMesh, ParseError>
+where
+    W: Read
+{
+    let reader = io::BufReader::new(reader);
+    let mut entries = vec![];
+    let mut last_z = 0f32;
+    let regex_xy = Regex::new(r"X([\d.]+)\s+Y([\d.]+)\s+E").unwrap();
+    let regex_z = Regex::new(r"Z([\d.]+)").unwrap();
+    let mut position_unsafe = false;
+
+    for line in reader.lines() {
+        let line = line?;
+        if line.starts_with("G1") || line.starts_with("G0") {
+            if let Some(caps) = regex_z.captures(&line)
+            {
+                last_z = caps.get(1).unwrap().as_str().parse::<f32>()?;
+            }
+
+            if let Some(caps) = regex_xy.captures(&line) 
+            {
+                let x = caps.get(1).unwrap().as_str().parse::<f32>()?;
+                let y = caps.get(2).unwrap().as_str().parse::<f32>()?;
+
+                entries.push(Point { v: vec3(x, last_z, y), use_line: !position_unsafe});
+                position_unsafe = false;
+            }
+            else 
+            {
+                position_unsafe = true;
+            }
+        }
+    }
+
+    let mut positions = Vec::new();
+    let mut indices = Vec::new();
+
+    for i in 0..entries.len() - 1 {
+        if !entries[i + 1].use_line
+        {
+            continue;
+        }
+
+        let mut cylinder = CpuMesh::cylinder(2);
+        cylinder
+            .transform(edge_transform(entries[i].v, entries[i + 1].v))
+            .unwrap();
+
+            let l = positions.len() as u32;
+
+        cylinder.positions.into_f32()
+            .iter()
+            .for_each(|v| positions.push(*v));
+
+        cylinder.indices.into_u32()
+            .unwrap()
+            .iter()
+            .map(|i| *i + l)
+            .for_each(|i| indices.push(i));
+    }
+    return Ok(CpuMesh {
+        positions: Positions::F32(positions.clone()),
+        indices: Indices::U32(indices.clone()),
+        ..Default::default()
+     });
+}
+
+// Smart code from https://github.com/asny/three-d/blob/master/examples/wireframe/src/main.rs
+fn edge_transform(p1: Vec3, p2: Vec3) -> Mat4 {
+    Mat4::from_translation(p1)
+        * Into::<Mat4>::into(Quat::from_arc(
+            vec3(1.0, 0.0, 0.0),
+            (p2 - p1).normalize(),
+            None,
+        ))
+        * Mat4::from_nonuniform_scale((p1 - p2).magnitude(), 0.1, 0.1)
 }

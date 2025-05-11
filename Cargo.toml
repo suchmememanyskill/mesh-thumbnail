@@ -12,3 +12,4 @@ threemf = "0.7.0"
 zip = { version = "2.2"}
 wavefront_obj = { version = "10" }
 image = { version = "0.25.6", features = ["jpeg", "png"]}
+regex = "1"

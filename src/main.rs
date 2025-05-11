@@ -192,12 +192,16 @@ fn render_model(
         );
 
     let mut offset = Mat4::from_translation(model.aabb().min() * -1.0) * Mat4::from_translation((model.aabb().min() - model.aabb().max()) / 2f32);
-
-    if !(file.ends_with(".obj") || file.ends_with(".obj.zip"))
+    
+    if file.ends_with(".stl") 
+        || file.ends_with(".stl.zip")
+        || file.ends_with(".3mf")
+        || file.ends_with(".obj")
+        || file.ends_with(".obj.zip")
     {
         offset = Mat4::from_angle_x(Deg(270.0)) * offset;
     }
-
+    
     model.set_transformation(offset);
 
     let magnitude = (model.aabb().min() - model.aabb().max()).magnitude();
