@@ -341,8 +341,10 @@ fn parse_gcode_inner<W>(reader: &mut W) -> Result<CpuMesh, ParseError>
 where
     W: Read
 {
+    const ANGLE_SUBDIVISIONS: u32 = 2;
+
     let reader = io::BufReader::new(reader);
-    let mut entries = vec![];
+    let mut entries = Vec::with_capacity(0x10000);
     let mut last_z = 0f32;
     let regex_xy = Regex::new(r"X([\d.]+)\s+Y([\d.]+)\s+E").unwrap();
     let regex_z = Regex::new(r"Z([\d.]+)").unwrap();
@@ -371,8 +373,14 @@ where
         }
     }
 
-    let mut positions = Vec::new();
-    let mut indices = Vec::new();
+    let mut test_cylinder = CpuMesh::cylinder(ANGLE_SUBDIVISIONS);
+    test_cylinder
+        .transform(edge_transform(entries[0].v, entries[1].v))
+        .unwrap();
+
+    let estimated_entries = entries.iter().filter(|x| x.use_line).count();
+    let mut positions = Vec::with_capacity(test_cylinder.positions.len() * estimated_entries);
+    let mut indices = Vec::with_capacity(test_cylinder.indices.len().unwrap() * estimated_entries);
 
     for i in 0..entries.len() - 1 {
         if !entries[i + 1].use_line
@@ -380,23 +388,25 @@ where
             continue;
         }
 
-        let mut cylinder = CpuMesh::cylinder(2);
+        let mut cylinder = CpuMesh::cylinder(ANGLE_SUBDIVISIONS);
         cylinder
             .transform(edge_transform(entries[i].v, entries[i + 1].v))
             .unwrap();
 
-            let l = positions.len() as u32;
+        let l = positions.len() as u32;
 
-        cylinder.positions.into_f32()
-            .iter()
-            .for_each(|v| positions.push(*v));
+        positions.extend(
+            cylinder.positions.into_f32()
+        );
 
-        cylinder.indices.into_u32()
-            .unwrap()
-            .iter()
-            .map(|i| *i + l)
-            .for_each(|i| indices.push(i));
+        indices.extend(
+            cylinder.indices.into_u32()
+                .unwrap()
+                .iter()
+                .map(|i| *i + l)
+        );
     }
+    
     return Ok(CpuMesh {
         positions: Positions::F32(positions.clone()),
         indices: Indices::U32(indices.clone()),
