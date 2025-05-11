@@ -342,12 +342,15 @@ where
     W: Read
 {
     let reader = io::BufReader::new(reader);
-    let mut entries = vec![];
     let mut last_z = 0f32;
     let regex_xy = Regex::new(r"X([\d.]+)\s+Y([\d.]+)\s+E").unwrap();
     let regex_z = Regex::new(r"Z([\d.]+)").unwrap();
-    let mut position_unsafe = false;
+    let mut position_unsafe = true;
+    let mut positions = Vec::with_capacity(0x10000);
+    let mut indices = Vec::with_capacity(0x10000);
+    let mut last_point = Vec3::zero();
 
+    // TODO: Is the old method (323551b2c5394d4cb38e70be68ba644890919367) more efficient if we preallocate the vector?
     for line in reader.lines() {
         let line = line?;
         if line.starts_with("G1") || line.starts_with("G0") {
@@ -361,7 +364,30 @@ where
                 let x = caps.get(1).unwrap().as_str().parse::<f32>()?;
                 let y = caps.get(2).unwrap().as_str().parse::<f32>()?;
 
-                entries.push(Point { v: vec3(x, last_z, y), use_line: !position_unsafe});
+                let new_point = Vec3::new(x, last_z, y);
+
+                if !position_unsafe
+                {
+                    let mut cylinder = CpuMesh::cylinder(2);
+                    cylinder
+                        .transform(edge_transform(last_point, new_point))
+                        .unwrap();
+            
+                    let l = positions.len() as u32;
+
+                    positions.extend(
+                        cylinder.positions.into_f32()
+                    );
+            
+                    indices.extend(
+                        cylinder.indices.into_u32()
+                            .unwrap()
+                            .iter()
+                            .map(|i| *i + l)
+                    );
+                }
+
+                last_point = new_point;
                 position_unsafe = false;
             }
             else 
@@ -371,32 +397,6 @@ where
         }
     }
 
-    let mut positions = Vec::new();
-    let mut indices = Vec::new();
-
-    for i in 0..entries.len() - 1 {
-        if !entries[i + 1].use_line
-        {
-            continue;
-        }
-
-        let mut cylinder = CpuMesh::cylinder(2);
-        cylinder
-            .transform(edge_transform(entries[i].v, entries[i + 1].v))
-            .unwrap();
-
-            let l = positions.len() as u32;
-
-        cylinder.positions.into_f32()
-            .iter()
-            .for_each(|v| positions.push(*v));
-
-        cylinder.indices.into_u32()
-            .unwrap()
-            .iter()
-            .map(|i| *i + l)
-            .for_each(|i| indices.push(i));
-    }
     return Ok(CpuMesh {
         positions: Positions::F32(positions.clone()),
         indices: Indices::U32(indices.clone()),
