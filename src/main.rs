@@ -206,6 +206,11 @@ fn render_model(
     {
         offset = Mat4::from_angle_x(Deg(270.0)) * offset;
     }
+    else if file.ends_with("gcode")
+        || file.ends_with("gcode.zip")
+    {
+        offset = Mat4::from_angle_y(Deg(180.0)) * offset;
+    }
     
     model.set_transformation(offset);
 

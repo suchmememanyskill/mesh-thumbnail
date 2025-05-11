@@ -363,7 +363,7 @@ where
                 let x = caps.get(1).unwrap().as_str().parse::<f32>()?;
                 let y = caps.get(2).unwrap().as_str().parse::<f32>()?;
 
-                entries.push(Point { v: vec3(x, last_z, y), use_line: !position_unsafe});
+                entries.push(Point { v: vec3(-x, last_z, y), use_line: !position_unsafe});
                 position_unsafe = false;
             }
             else 
