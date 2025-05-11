@@ -132,6 +132,11 @@ fn main() {
             extension = "obj.zip";
         }
 
+        if filename.ends_with(".gcode.zip")
+        {
+            extension = "gcode.zip";
+        }
+
         let filename_image = format!("{}{}", &filename[..filename.len() - extension.len()] ,args.format.to_string());
         let image_path = PathBuf::from(args.outdir.clone()).join(filename_image);
         let image_path_str = image_path.to_str().take().unwrap();
