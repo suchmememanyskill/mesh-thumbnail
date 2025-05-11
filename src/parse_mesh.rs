@@ -364,7 +364,7 @@ where
                 let x = caps.get(1).unwrap().as_str().parse::<f32>()?;
                 let y = caps.get(2).unwrap().as_str().parse::<f32>()?;
 
-                let new_point = Vec3::new(x, last_z, y);
+                let new_point = Vec3::new(-x, last_z, y);
 
                 if !position_unsafe
                 {
