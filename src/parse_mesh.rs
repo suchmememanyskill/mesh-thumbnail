@@ -373,6 +373,11 @@ where
         }
     }
 
+    if entries.len() <= 2
+    {
+        return Err(ParseError::ParseError(String::from("Gcode file contains no move instructions")));
+    }
+
     let mut test_cylinder = CpuMesh::cylinder(ANGLE_SUBDIVISIONS);
     test_cylinder
         .transform(edge_transform(entries[0].v, entries[1].v))
