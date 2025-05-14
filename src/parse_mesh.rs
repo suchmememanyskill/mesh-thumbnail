@@ -341,8 +341,6 @@ fn parse_gcode_inner<W>(reader: &mut W) -> Result<CpuMesh, ParseError>
 where
     W: Read
 {
-    const ANGLE_SUBDIVISIONS: u32 = 2;
-
     let reader = io::BufReader::new(reader);
     let mut entries = Vec::with_capacity(0x10000);
     let mut last_z = 0f32;
@@ -378,7 +376,8 @@ where
         return Err(ParseError::ParseError(String::from("Gcode file contains no move instructions")));
     }
 
-    let mut test_cylinder = CpuMesh::cylinder(ANGLE_SUBDIVISIONS);
+    let angle_subdivisions = if entries.len() < 1000000 { 3 } else { 2 };
+    let mut test_cylinder = CpuMesh::cylinder(angle_subdivisions);
     test_cylinder
         .transform(edge_transform(entries[0].v, entries[1].v))
         .unwrap();
@@ -393,7 +392,7 @@ where
             continue;
         }
 
-        let mut cylinder = CpuMesh::cylinder(ANGLE_SUBDIVISIONS);
+        let mut cylinder = CpuMesh::cylinder(angle_subdivisions);
         cylinder
             .transform(edge_transform(entries[i].v, entries[i + 1].v))
             .unwrap();
@@ -427,5 +426,5 @@ fn edge_transform(p1: Vec3, p2: Vec3) -> Mat4 {
             (p2 - p1).normalize(),
             None,
         ))
-        * Mat4::from_nonuniform_scale((p1 - p2).magnitude(), 0.1, 0.1)
+        * Mat4::from_nonuniform_scale((p1 - p2).magnitude(), 0.2, 0.5)
 }
