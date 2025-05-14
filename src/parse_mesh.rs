@@ -343,8 +343,11 @@ where
 {
     let reader = io::BufReader::new(reader);
     let mut entries = Vec::with_capacity(0x10000);
+    let mut last_x = 0f32;
+    let mut last_y = 0f32;
     let mut last_z = 0f32;
     let regex_xy = Regex::new(r"X([\d.]+)\s+Y([\d.]+)\s+E").unwrap();
+    let regex_xy_no_extrusion = Regex::new(r"X([\d.]+)\s+Y([\d.]+)").unwrap();
     let regex_z = Regex::new(r"Z([\d.]+)").unwrap();
     let mut position_unsafe = false;
 
@@ -358,14 +361,21 @@ where
 
             if let Some(caps) = regex_xy.captures(&line) 
             {
-                let x = caps.get(1).unwrap().as_str().parse::<f32>()?;
-                let y = caps.get(2).unwrap().as_str().parse::<f32>()?;
+                if position_unsafe
+                {
+                    entries.push(Point { v: vec3(-last_x, last_z, last_y), use_line: false});
+                    position_unsafe = false;
+                }
 
-                entries.push(Point { v: vec3(-x, last_z, y), use_line: !position_unsafe});
-                position_unsafe = false;
+                last_x = caps.get(1).unwrap().as_str().parse::<f32>()?;
+                last_y = caps.get(2).unwrap().as_str().parse::<f32>()?;
+
+                entries.push(Point { v: vec3(-last_x, last_z, last_y), use_line: true});
             }
-            else 
+            else if let Some(caps) = regex_xy_no_extrusion.captures(&line)
             {
+                last_x = caps.get(1).unwrap().as_str().parse::<f32>()?;
+                last_y = caps.get(2).unwrap().as_str().parse::<f32>()?;
                 position_unsafe = true;
             }
         }
@@ -426,5 +436,5 @@ fn edge_transform(p1: Vec3, p2: Vec3) -> Mat4 {
             (p2 - p1).normalize(),
             None,
         ))
-        * Mat4::from_nonuniform_scale((p1 - p2).magnitude(), 0.2, 0.5)
+        * Mat4::from_nonuniform_scale((p1 - p2).magnitude(), 0.2, 0.2)
 }
