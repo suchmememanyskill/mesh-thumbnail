@@ -436,5 +436,5 @@ fn edge_transform(p1: Vec3, p2: Vec3) -> Mat4 {
             (p2 - p1).normalize(),
             None,
         ))
-        * Mat4::from_nonuniform_scale((p1 - p2).magnitude(), 0.2, 0.2)
+        * Mat4::from_nonuniform_scale((p1 - p2).magnitude(), 0.2, 0.4)
 }
