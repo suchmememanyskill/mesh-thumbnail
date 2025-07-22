@@ -218,11 +218,11 @@ fn render_model(
         );
 
     for iter in 0..count {
-        model.set_transformation(Mat4::one());
         let mut iter_file_path = PathBuf::clone(image_path);
         let mut local_rotatex = rotatex;
 
         if count > 1 {
+            model.set_transformation(Mat4::one());
             let new_name = format!("{}-{:02}", iter_file_path.file_stem().unwrap().to_str().unwrap(), iter);
             replace_file_stem(&mut iter_file_path, &new_name);
         }
