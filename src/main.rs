@@ -1,12 +1,12 @@
 use clap::Parser;
 use image::{imageops::FilterType::Triangle, ImageReader};
-use std::{io::Read, num::ParseIntError, path::PathBuf};
+use std::{ffi::OsString, io::Read, num::ParseIntError, path::PathBuf};
 use clap::ValueEnum;
 use std::path;
 use three_d::*;
 use three_d_asset::io::Serialize;
 use std::fs::File;
-use zip::ZipArchive;
+use zip::{result::ZipError, ZipArchive};
 use std::io::Cursor;
 
 mod parse_mesh;
@@ -60,6 +60,14 @@ struct Args {
     /// Prefer 3mf thumbnail over 3mf model
     #[arg(long, default_value_t = false)]
     prefer_3mf_thumbnail: bool,
+
+    #[arg(long, default_value_t = 1)]
+    /// Amount of images to generate per file
+    images_per_file: u32,
+
+    #[arg(long, default_value_t = 1.0)]
+    /// Scale factor for the camera
+    inverse_zoom: f32,
 }
 
 fn parse_hex_color(s: &str) -> Result<u32, ParseIntError> {
@@ -87,6 +95,17 @@ fn main() {
     if args.prefer_3mf_thumbnail
     {
         args.fallback_3mf_thumbnail = false;
+    }
+
+    if args.images_per_file < 1
+    {
+        args.images_per_file = 1;
+    }
+
+    if args.images_per_file > 1 && args.rotatex != 0.0
+    {
+        eprintln!("Warning: rotatex is ignored when generating multiple images per file.");
+        args.rotatex = 0.0;
     }
 
     println!("Parsed arguments: {:#?}", args);
@@ -158,7 +177,7 @@ fn main() {
         let possible_mesh = parse_mesh::parse_file((&absolute_path).to_str().take().unwrap());
 
         if let Ok(mesh) = possible_mesh {
-            render_model(&context, &viewport, &mesh, alpha, &file, &image_path, &args.color, args.rotatex, args.rotatey, &mut texture, &mut depth_texture);
+            render_model(&context, &viewport, &mesh, alpha, &file, &image_path, &args.color, args.rotatex, args.rotatey, &mut texture, &mut depth_texture, args.images_per_file, args.inverse_zoom);
         } else if let Err(e) = possible_mesh {
             println!("Error while converting {}: {}.", filename, e.to_string());
 
@@ -185,6 +204,8 @@ fn render_model(
     rotatey: f32,
     texture: &mut Texture2D,
     depth_texture: &mut DepthTexture2D,
+    count : u32,
+    scale : f32,
 ) {
     let color = parse_hex_color(color).unwrap();
     let mut model = Gm::new(
@@ -196,59 +217,78 @@ fn render_model(
             }),
         );
 
-    let mut offset = Mat4::from_translation(model.aabb().min() * -1.0) * Mat4::from_translation((model.aabb().min() - model.aabb().max()) / 2f32);
+    for iter in 0..count {
+        model.set_transformation(Mat4::one());
+        let mut iter_file_path = PathBuf::clone(image_path);
+        let mut local_rotatex = rotatex;
 
-    if file.ends_with(".stl") 
-        || file.ends_with(".stl.zip")
-        || file.ends_with(".3mf")
-        || file.ends_with(".obj")
-        || file.ends_with(".obj.zip")
-    {
-        offset = Mat4::from_angle_x(Deg(270.0)) * offset;
-    }
-    else if file.ends_with("gcode")
-        || file.ends_with("gcode.zip")
-    {
-        offset = Mat4::from_angle_y(Deg(180.0)) * offset;
-    }
-    
-    model.set_transformation(offset);
-
-    let magnitude = (model.aabb().min() - model.aabb().max()).magnitude();
-
-    let mut camera = Camera::new_perspective(
-        viewport.clone(),
-        vec3(0.0, 0.0, magnitude),
-        vec3(0.0, 0.0, 0.0),
-        vec3(0.0, 1.0, 0.0),
-        degrees(45.0),
-        magnitude * 0.01,
-        1000.0,
-    );
-    let target = camera.target();
-    camera.rotate_around_with_fixed_up(target, (3.14 * 2.0) * (rotatex / 360.0), (3.14 * 2.0) * (rotatey / 360.0));
-
-    let pixels : Vec<[u8; 4]> = RenderTarget::new(
-        texture.as_color_target(None),
-        depth_texture.as_depth_target(),
-    )
-    // Clear color and depth of the render target
-    .clear(ClearState::color_and_depth(0.2, 0.2, 0.2, alpha, 1.0))
-    // Render the triangle with the per vertex colors defined at construction
-    .render(&camera, &model, &[])
-    .read_color();
-
-    three_d_asset::io::save(
-        &CpuTexture {
-            data: TextureData::RgbaU8(pixels),
-            width: texture.width(),
-            height: texture.height(),
-            ..Default::default()
+        if count > 1 {
+            let new_name = format!("{}-{:02}", iter_file_path.file_stem().unwrap().to_str().unwrap(), iter);
+            replace_file_stem(&mut iter_file_path, &new_name);
         }
-        .serialize(image_path)
-        .unwrap(),
-    )
-    .unwrap();
+
+        if iter > 0 {
+            local_rotatex += (360.0 / count as f32) * iter as f32;
+        }
+
+        let mut offset = Mat4::from_translation(model.aabb().min() * -1.0) * Mat4::from_translation((model.aabb().min() - model.aabb().max()) / 2f32);
+
+        if file.ends_with(".stl") 
+            || file.ends_with(".stl.zip")
+            || file.ends_with(".3mf")
+            || file.ends_with(".obj")
+            || file.ends_with(".obj.zip")
+        {
+            offset = Mat4::from_angle_x(Deg(270.0)) * offset;
+        }
+        else if file.ends_with("gcode")
+            || file.ends_with("gcode.zip")
+        {
+            offset = Mat4::from_angle_y(Deg(180.0)) * offset;
+        }
+        model.set_transformation(offset);
+
+        let magnitude = (model.aabb().min() - model.aabb().max()).magnitude() * scale;
+
+        let pitch = rotatey.clamp(-90.0, 90.0).to_radians();
+        let yaw = local_rotatex.to_radians();
+
+        let x = magnitude * pitch.cos() * yaw.sin();
+        let y = magnitude * pitch.sin();
+        let z = magnitude * pitch.cos() * yaw.cos();
+
+        let camera = Camera::new_perspective(
+            viewport.clone(),
+            vec3(x, y, z),
+            vec3(0.0, 0.0, 0.0),
+            vec3(0.0, 1.0, 0.0),
+            degrees(45.0),
+            magnitude * 0.01,
+            1000.0,
+        );
+
+        let pixels : Vec<[u8; 4]> = RenderTarget::new(
+            texture.as_color_target(None),
+            depth_texture.as_depth_target(),
+        )
+        // Clear color and depth of the render target
+        .clear(ClearState::color_and_depth(0.2, 0.2, 0.2, alpha, 1.0))
+        // Render the triangle with the per vertex colors defined at construction
+        .render(&camera, &model, &[])
+        .read_color();
+
+        three_d_asset::io::save(
+            &CpuTexture {
+                data: TextureData::RgbaU8(pixels),
+                width: texture.width(),
+                height: texture.height(),
+                ..Default::default()
+            }
+            .serialize(iter_file_path)
+            .unwrap(),
+        )
+        .unwrap();
+    }
 }
 
 fn extract_image_from_3mf(
@@ -279,4 +319,12 @@ fn extract_image_from_3mf(
         std::io::ErrorKind::NotFound,
         "thumbnail_middle.png not found in 3mf file",
     )))
+}
+
+fn replace_file_stem(path: &mut PathBuf, new_stem: &str) {
+    if let Some(ext) = path.extension() {
+        path.set_file_name(format!("{}.{}", new_stem, ext.to_string_lossy()));
+    } else {
+        path.set_file_name(new_stem);
+    }
 }
