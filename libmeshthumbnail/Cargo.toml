@@ -1,0 +1,16 @@
+[package]
+name = "libmeshthumbnail"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+euc = { git = "https://github.com/zesterer/euc", rev = "e8f7aeec9ff431b373f83de2c773ddf8a2a3ec4d" }
+vek = "0"
+image = { version = "0", features = ["png", "jpeg"] }
+stl_io = "0"
+thiserror = "2"
+zip = "6"
+wavefront_obj = { version = "11" }
+threemf = { git = "https://github.com/suchmememanyskill/3mf-rs", rev = "d78e731b2fcf127692380332ad2708aec65dee68" }
+regex = "1"
+base64 = "0"

@@ -1,20 +1,15 @@
 [package]
-name = "mesh-thumbnail"
-version = "1.4.0"
+name = "mesh-thumbnail-software"
+version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+vek = "0"
+image = { version = "0", features = ["png", "jpeg"] }
+libmeshthumbnail = { path = "./libmeshthumbnail" }
 clap = { version = "4.5.32", features = ["derive"] }
-three-d = { git = "https://github.com/suchmememanyskill/three-d", rev = "e74750282c08e3388a770f3ac325a34aab9cb7a0", features = ["headless"] }
-stl_io = { version = "0.8" }
-three-d-asset = {version = "0.9", features= ["jpeg", "png"] }
-threemf = { git = "https://github.com/suchmememanyskill/3mf-rs", rev = "d78e731b2fcf127692380332ad2708aec65dee68" }
-zip = { version = "4"}
-wavefront_obj = { version = "10" }
-image = { version = "0.25.6", features = ["jpeg", "png"]}
-regex = "1"
-base64 = "0"
 
 [profile.release]
 strip = true
 lto = true
+codegen-units = 1
