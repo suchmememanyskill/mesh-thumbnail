@@ -3,6 +3,13 @@ name = "mesh-thumbnail"
 version = "1.4.0"
 edition = "2024"
 
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[features]
+default = []
+python = ["pyo3"]
+
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
 three-d = { git = "https://github.com/suchmememanyskill/three-d", rev = "e74750282c08e3388a770f3ac325a34aab9cb7a0", features = ["headless"] }
@@ -14,6 +21,7 @@ wavefront_obj = { version = "10" }
 image = { version = "0.25.6", features = ["jpeg", "png"]}
 regex = "1"
 base64 = "0"
+pyo3 = { version = "0.22.2", features = ["extension-module"], optional = true }
 
 [profile.release]
 strip = true

@@ -25,7 +25,7 @@ impl SolidMaterial {
     }
 
     /// Constructs a new opaque color material from a [CpuMaterial].
-    pub fn new_opaque(context: &Context, cpu_material: &CpuMaterial) -> Self {
+    pub fn new_opaque(_context: &Context, cpu_material: &CpuMaterial) -> Self {
         Self {
             color: cpu_material.albedo,
             is_transparent: false,
@@ -34,7 +34,7 @@ impl SolidMaterial {
     }
 
     /// Constructs a new transparent color material from a [CpuMaterial].
-    pub fn new_transparent(context: &Context, cpu_material: &CpuMaterial) -> Self {
+    pub fn new_transparent(_context: &Context, cpu_material: &CpuMaterial) -> Self {
         Self {
             color: cpu_material.albedo,
             is_transparent: true,
