@@ -8,6 +8,8 @@ mod gcode;
 mod step;
 #[cfg(feature = "step")]
 pub use step::convert_step_to_stl;
+#[cfg(feature = "step")]
+pub use step::convert_step_path_to_stl;
 
 pub fn handle_parse(path : &PathBuf) -> Result<Option<crate::mesh::Mesh>, crate::error::MeshThumbnailError>
 {

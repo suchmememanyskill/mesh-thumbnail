@@ -72,9 +72,22 @@ fn parse_step_zip(path : &PathBuf) -> Result<Mesh, MeshThumbnailError>
     parse_step(&temp_path)
 }
 
-pub fn convert_step_to_stl(step_path: &str) -> Result<Vec<u8>, MeshThumbnailError> {
+pub fn convert_step_to_stl(step: &[u8]) -> Result<Vec<u8>, MeshThumbnailError> {
+    // Todo: This is kinda hacky
+    let temp_dir = tempfile::tempdir().expect("Failed to create temporary directory");
+    let mut temp_path = temp_dir.path().to_path_buf();
+    temp_path.push("a.step");
+    let mut temp_file = File::create(&temp_path)?;
+    temp_file.write_all(step)?;
+    temp_file.flush()?;
+    drop(temp_file);
+
+    convert_step_path_to_stl(&temp_path)
+}
+
+pub fn convert_step_path_to_stl(step_path : &PathBuf) -> Result<Vec<u8>, MeshThumbnailError> {
     let tolerance = env::var("LIBMESHTHUMBNAIL_STEP_TRIANGULATION_TOLERANCE").map(|val| val.parse::<f64>().unwrap_or(TOLERANCE_DEFAULT)).unwrap_or(TOLERANCE_DEFAULT);
-    let shape = Shape::read_step(step_path)?;
+    let shape = Shape::read_step(&step_path)?;
     let mesher = Mesher::try_new(&shape, tolerance)?;
     let mesh = mesher.mesh()?;
 
