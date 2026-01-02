@@ -4,6 +4,8 @@ mod stl;
 mod obj;
 mod threemf;
 mod gcode;
+#[cfg(feature = "step")]
+mod step;
 
 pub fn handle_parse(path : &PathBuf) -> Result<Option<crate::mesh::Mesh>, crate::error::MeshThumbnailError>
 {
@@ -20,6 +22,11 @@ pub fn handle_parse(path : &PathBuf) -> Result<Option<crate::mesh::Mesh>, crate:
     }
 
     if let Some(mesh) = gcode::handle_gcode(path)? {
+        return Ok(Some(mesh));
+    }
+
+    #[cfg(feature = "step")]
+    if let Some(mesh) = step::handle_step(path)? {
         return Ok(Some(mesh));
     }
 

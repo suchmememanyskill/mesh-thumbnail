@@ -1,3 +1,5 @@
+use core::error;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -16,4 +18,6 @@ pub enum MeshThumbnailError {
     GcodeNumberParseError(#[from] std::num::ParseFloatError),
     #[error("Image processing error: {0}")]
     ImageError(#[from] image::ImageError),
+    #[error("STEP parsing error: {0}")]
+    StepParseError(#[from] opencascade::Error),
 }

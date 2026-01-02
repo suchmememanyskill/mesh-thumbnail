@@ -14,3 +14,8 @@ wavefront_obj = { version = "11" }
 threemf = { git = "https://github.com/suchmememanyskill/3mf-rs", rev = "d78e731b2fcf127692380332ad2708aec65dee68" }
 regex = "1"
 base64 = "0"
+opencascade = { git = "https://github.com/bschwind/opencascade-rs", rev = "14fca36e77b52aac4c4c5e75314f79e84b086053", optional = true}
+tempfile = "3"
+
+[features]
+step = ["dep:opencascade"]

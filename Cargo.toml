@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 vek = "0"
 image = { version = "0", features = ["png", "jpeg"] }
-libmeshthumbnail = { path = "./libmeshthumbnail" }
+libmeshthumbnail = { path = "./libmeshthumbnail", features = ["step"] }
 clap = { version = "4.5.32", features = ["derive"] }
 
 [profile.release]
