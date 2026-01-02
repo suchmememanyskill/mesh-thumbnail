@@ -21,7 +21,7 @@ pub fn handle_step(path : &PathBuf) -> Result<Option<Mesh>, MeshThumbnailError>
 fn parse_step(path : &PathBuf) -> Result<Mesh, MeshThumbnailError>
 {
     let shape = Shape::read_step(path)?;
-    let mesher = Mesher::try_new(&shape, 0.1)?;
+    let mesher = Mesher::try_new(&shape, 0.01)?;
     let mesh = mesher.mesh()?;
 
     Ok(Mesh {
