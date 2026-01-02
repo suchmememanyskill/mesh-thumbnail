@@ -1,4 +1,4 @@
-use std::{fs::File, io::{self, Cursor, Write}, path::PathBuf};
+use std::{env, fs::File, io::{self, Cursor, Write}, path::PathBuf};
 
 use opencascade::{mesh::Mesher, primitives::Shape};
 use zip::ZipArchive;
@@ -20,8 +20,10 @@ pub fn handle_step(path : &PathBuf) -> Result<Option<Mesh>, MeshThumbnailError>
 
 fn parse_step(path : &PathBuf) -> Result<Mesh, MeshThumbnailError>
 {
+    let tolerance_default = 0.01;
+    let tolerance = env::var("LIBMESHTHUMBNAIL_STEP_TRIANGULATION_TOLERANCE").map(|val| val.parse::<f64>().unwrap_or(tolerance_default)).unwrap_or(tolerance_default);
     let shape = Shape::read_step(path)?;
-    let mesher = Mesher::try_new(&shape, 0.01)?;
+    let mesher = Mesher::try_new(&shape, tolerance)?;
     let mesh = mesher.mesh()?;
 
     Ok(Mesh {
