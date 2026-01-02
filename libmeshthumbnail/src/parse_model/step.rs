@@ -1,9 +1,12 @@
 use std::{env, fs::File, io::{self, Cursor, Write}, path::PathBuf};
 
 use opencascade::{mesh::Mesher, primitives::Shape};
+use stl_io::{Triangle, Vector, Vertex};
 use zip::ZipArchive;
 
 use crate::{error::MeshThumbnailError, mesh::Mesh};
+
+const TOLERANCE_DEFAULT : f64 = 0.01;
 
 pub fn handle_step(path : &PathBuf) -> Result<Option<Mesh>, MeshThumbnailError>
 {
@@ -20,8 +23,7 @@ pub fn handle_step(path : &PathBuf) -> Result<Option<Mesh>, MeshThumbnailError>
 
 fn parse_step(path : &PathBuf) -> Result<Mesh, MeshThumbnailError>
 {
-    let tolerance_default = 0.01;
-    let tolerance = env::var("LIBMESHTHUMBNAIL_STEP_TRIANGULATION_TOLERANCE").map(|val| val.parse::<f64>().unwrap_or(tolerance_default)).unwrap_or(tolerance_default);
+    let tolerance = env::var("LIBMESHTHUMBNAIL_STEP_TRIANGULATION_TOLERANCE").map(|val| val.parse::<f64>().unwrap_or(TOLERANCE_DEFAULT)).unwrap_or(TOLERANCE_DEFAULT);
     let shape = Shape::read_step(path)?;
     let mesher = Mesher::try_new(&shape, tolerance)?;
     let mesh = mesher.mesh()?;
@@ -68,4 +70,50 @@ fn parse_step_zip(path : &PathBuf) -> Result<Mesh, MeshThumbnailError>
     }
     
     parse_step(&temp_path)
+}
+
+pub fn convert_step_to_stl(step_path: &str) -> Result<Vec<u8>, MeshThumbnailError> {
+    let tolerance = env::var("LIBMESHTHUMBNAIL_STEP_TRIANGULATION_TOLERANCE").map(|val| val.parse::<f64>().unwrap_or(TOLERANCE_DEFAULT)).unwrap_or(TOLERANCE_DEFAULT);
+    let shape = Shape::read_step(step_path)?;
+    let mesher = Mesher::try_new(&shape, tolerance)?;
+    let mesh = mesher.mesh()?;
+
+    let mut triangles: Vec<Triangle> = Vec::with_capacity(mesh.indices.len() / 3 + 1);
+
+    for i in (0..mesh.indices.len()).step_by(3) {
+        if i + 2 < mesh.indices.len() {
+            let idx0 = mesh.indices[i];
+            let idx1 = mesh.indices[i + 1];
+            let idx2 = mesh.indices[i + 2];
+
+            let v0 = &mesh.vertices[idx0];
+            let v1 = &mesh.vertices[idx1];
+            let v2 = &mesh.vertices[idx2];
+
+            let n0 = &mesh.normals[idx0];
+            let n1 = &mesh.normals[idx1];
+            let n2 = &mesh.normals[idx2];
+            let normal = Vector::new([
+                ((n0.x + n1.x + n2.x) / 3.0) as f32,
+                ((n0.y + n1.y + n2.y) / 3.0) as f32,
+                ((n0.z + n1.z + n2.z) / 3.0) as f32,
+            ]);
+
+            let triangle = Triangle {
+                normal,
+                vertices: [
+                    Vertex::new([v0.x as f32, v0.y as f32, v0.z as f32]),
+                    Vertex::new([v1.x as f32, v1.y as f32, v1.z as f32]),
+                    Vertex::new([v2.x as f32, v2.y as f32, v2.z as f32]),
+                ],
+            };
+
+            triangles.push(triangle);
+        }
+    }
+
+    let mut data = Vec::new();
+    stl_io::write_stl(&mut data, triangles.iter())?;
+
+    Ok(data)
 }

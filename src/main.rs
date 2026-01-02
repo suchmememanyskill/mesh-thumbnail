@@ -194,7 +194,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
 
-
         if args.fallback_3mf_thumbnail && filename.ends_with(".3mf") {
             if let Ok(Some(mut image)) = extract_image::handle_extract_image(&absolute_path) {
                 println!("Extracted thumbnail from {}, saving to {:?}...", filename, image_path);
