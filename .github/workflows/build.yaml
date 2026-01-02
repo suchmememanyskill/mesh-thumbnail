@@ -40,11 +40,11 @@ jobs:
 
       - name: Linux build dependencies
         if: matrix.name == 'linux-amd64'
-        run: sudo apt install fontconfig libfontconfig-dev -y
+        run: sudo apt install fontconfig libfontconfig-dev build-essential cmake -y
 
       - name: Windows build dependencies
         if: matrix.name == 'win-amd64'
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64
+        run: sudo apt-get install -y gcc-mingw-w64-x86-64 build-essential cmake
 
       - name: Setup Cache
         uses: Swatinem/rust-cache@v2
