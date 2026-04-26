@@ -1,5 +1,6 @@
-use vek::Vec3;
+use vek::{Mat4, Rgba, Vec3};
 
+#[derive(Clone)]
 pub struct Mesh {
     // Positions in space
     pub vertices : Vec<Vec3<f32>>,
@@ -38,6 +39,33 @@ impl MeshAxisAlignedBoundingBox {
     
     pub fn size(&self) -> Vec3<f32> {
         self.max - self.min
+    }
+}
+
+#[derive(Clone)]
+pub struct MeshWithTransform {
+    pub mesh: Mesh,
+    pub transform: Mat4<f32>,
+    pub color: Option<Rgba<u8>>,
+}
+
+pub struct ParseResult {
+    pub meshes: Vec<MeshWithTransform>,
+}
+
+impl ParseResult {
+    pub fn single(mesh: Mesh) -> Self {
+        ParseResult {
+            meshes: vec![MeshWithTransform {
+                mesh,
+                transform: Mat4::identity(),
+                color: None,
+            }],
+        }
+    }
+    
+    pub fn multiple(meshes: Vec<MeshWithTransform>) -> Self {
+        ParseResult { meshes }
     }
 }
 

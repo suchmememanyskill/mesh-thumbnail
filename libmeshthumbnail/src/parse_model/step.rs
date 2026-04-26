@@ -1,4 +1,4 @@
-use std::{env, fs::File, io::{self, Cursor, Write}, path::PathBuf};
+use std::{env, fs::File, io::{self, Write}, path::PathBuf};
 
 use opencascade::{mesh::Mesher, primitives::Shape};
 use stl_io::{Triangle, Vector, Vertex};
