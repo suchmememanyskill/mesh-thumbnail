@@ -162,8 +162,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             vec![args.rotatex]
         };
 
-        let mesh = match parse_model::handle_parse(&absolute_path) {
-            Ok(Some(mesh)) => Some(mesh),
+        let parse_result = match parse_model::handle_parse(&absolute_path) {
+            Ok(Some(result)) => Some(result),
             Ok(None) => {
                 println!("No parsers could handle file {}", filename);
                 None
@@ -174,7 +174,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
 
-        if let Some(mesh) = mesh {
+        if let Some(parse_result) = parse_result {
             for (i, x) in x_coords.iter().enumerate() {
                 let mut image_path = image_path.clone();
                 if args.images_per_file > 1 {
@@ -182,7 +182,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     replace_file_stem(&mut image_path, &new_name);
                 }
 
-                let render = render::render(&mesh, Vec2::new(args.width as usize, args.height as usize), 
+                let render = render::render(&parse_result, Vec2::new(args.width as usize, args.height as usize), 
                     Vec3::new(*x, args.rotatey, 0.0), 
                     color, 
                     args.zoom);
